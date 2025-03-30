@@ -1,0 +1,242 @@
+2025-03-29 13:43:32.138 | INFO     | __main__:before_request:48 - Request 95a51d61-e0a9-49a0-9ee6-cdfdaf3c77b1: GET /
+2025-03-29 13:43:32.430 | INFO     | __main__:stt_connect:184 - Client connected to STT WebSocket: X48ykBYhtMPDu79LAAAB
+2025-03-29 13:43:32.452 | INFO     | __main__:before_request:48 - Request 2f874c2f-e399-4fb2-b62e-c151639750e7: GET /favicon.ico
+2025-03-29 13:43:32.453 | ERROR    | __main__:handle_error:53 - Request 2f874c2f-e399-4fb2-b62e-c151639750e7 failed
+Traceback (most recent call last):
+
+  File "/Users/priyadwivedi/miniconda3/envs/speech-api/lib/python3.9/site-packages/eventlet/greenthread.py", line 272, in main
+    result = function(*args, **kwargs)
+             │         │       └ {}
+             │         └ ([('127.0.0.1', 63782), <eventlet.greenio.base.GreenSocket object at 0x108cb9e80>, 'request'],)
+             └ <bound method Server.process_request of <eventlet.wsgi.Server object at 0x108cb9f10>>
+  File "/Users/priyadwivedi/miniconda3/envs/speech-api/lib/python3.9/site-packages/eventlet/wsgi.py", line 905, in process_request
+    self.protocol(conn_state, self)
+    │    │        │           └ <eventlet.wsgi.Server object at 0x108cb9f10>
+    │    │        └ [('127.0.0.1', 63782), <eventlet.greenio.base.GreenSocket object at 0x108cb9e80>, 'request']
+    │    └ <class 'eventlet.wsgi.HttpProtocol'>
+    └ <eventlet.wsgi.Server object at 0x108cb9f10>
+  File "/Users/priyadwivedi/miniconda3/envs/speech-api/lib/python3.9/site-packages/eventlet/wsgi.py", line 363, in __init__
+    self.handle()
+    │    └ <function HttpProtocol.handle at 0x108957b80>
+    └ <eventlet.wsgi.HttpProtocol object at 0x108cb9d30>
+  File "/Users/priyadwivedi/miniconda3/envs/speech-api/lib/python3.9/site-packages/eventlet/wsgi.py", line 396, in handle
+    self.handle_one_request()
+    │    └ <function HttpProtocol.handle_one_request at 0x108957ca0>
+    └ <eventlet.wsgi.HttpProtocol object at 0x108cb9d30>
+  File "/Users/priyadwivedi/miniconda3/envs/speech-api/lib/python3.9/site-packages/eventlet/wsgi.py", line 492, in handle_one_request
+    self.handle_one_response()
+    │    └ <function HttpProtocol.handle_one_response at 0x108957d30>
+    └ <eventlet.wsgi.HttpProtocol object at 0x108cb9d30>
+  File "/Users/priyadwivedi/miniconda3/envs/speech-api/lib/python3.9/site-packages/eventlet/wsgi.py", line 632, in handle_one_response
+    for data in result:
+                └ <generator object DebuggedApplication.debug_application at 0x108e09a50>
+  File "/Users/priyadwivedi/miniconda3/envs/speech-api/lib/python3.9/site-packages/werkzeug/debug/__init__.py", line 343, in debug_application
+    app_iter = self.app(environ, start_response)
+               │    │   │        └ <function HttpProtocol.handle_one_response.<locals>.start_response at 0x108e57a60>
+               │    │   └ {'wsgi.errors': <_io.TextIOWrapper name='<stderr>' mode='w' encoding='utf-8'>, 'wsgi.version': (1, 0), 'wsgi.multithread': Tr...
+               │    └ <bound method Flask.wsgi_app of <Flask 'app'>>
+               └ <werkzeug.debug.DebuggedApplication object at 0x108c084c0>
+  File "/Users/priyadwivedi/miniconda3/envs/speech-api/lib/python3.9/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               │    └ <function Flask.full_dispatch_request at 0x1064bf790>
+               └ <Flask 'app'>
+> File "/Users/priyadwivedi/miniconda3/envs/speech-api/lib/python3.9/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         │    └ <function Flask.dispatch_request at 0x1064bf700>
+         └ <Flask 'app'>
+  File "/Users/priyadwivedi/miniconda3/envs/speech-api/lib/python3.9/site-packages/flask/app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+    │    │                       └ <Request 'http://127.0.0.1:5000/favicon.ico' [GET]>
+    │    └ <function Flask.raise_routing_exception at 0x1064bf160>
+    └ <Flask 'app'>
+  File "/Users/priyadwivedi/miniconda3/envs/speech-api/lib/python3.9/site-packages/flask/app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+          │       └ <NotFound '404: Not Found'>
+          └ <Request 'http://127.0.0.1:5000/favicon.ico' [GET]>
+  File "/Users/priyadwivedi/miniconda3/envs/speech-api/lib/python3.9/site-packages/flask/ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+             │    │           └ <function MapAdapter.match at 0x10619e160>
+             │    └ <werkzeug.routing.map.MapAdapter object at 0x108e60d90>
+             └ <RequestContext 'http://127.0.0.1:5000/favicon.ico' [GET] of app>
+  File "/Users/priyadwivedi/miniconda3/envs/speech-api/lib/python3.9/site-packages/werkzeug/routing/map.py", line 629, in match
+    raise NotFound() from None
+          └ <class 'werkzeug.exceptions.NotFound'>
+
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2025-03-29 13:44:34.213 | INFO     | __main__:stt_connect:184 - Client connected to STT WebSocket: h40aVSw4PBLqbUNRAAAB
+2025-03-29 13:45:08.906 | INFO     | __main__:stt_connect:184 - Client connected to STT WebSocket: n8V2AXW8ZmbQgixZAAAB
+2025-03-29 13:47:59.046 | INFO     | __main__:stt_connect:184 - Client connected to STT WebSocket: 6YhMgQcaksaIwoEHAAAB
+2025-03-29 13:48:02.455 | INFO     | __main__:stt_disconnect:189 - Client disconnected from STT WebSocket: 6YhMgQcaksaIwoEHAAAB
+2025-03-29 13:48:02.470 | INFO     | __main__:before_request:48 - Request 2338d060-dc31-442c-af2b-ae62ef8c6257: GET /
+2025-03-29 13:48:02.517 | INFO     | __main__:stt_connect:184 - Client connected to STT WebSocket: lfpD7skZWKdegKdqAAAD
+2025-03-29 13:48:02.525 | INFO     | __main__:before_request:48 - Request 5a78aaf4-495b-44c8-91e2-0ccdb6e1e083: GET /favicon.ico
+2025-03-29 13:49:57.268 | INFO     | __main__:stt_connect:184 - Client connected to STT WebSocket: zHF5AH4osQdwle3mAAAB
+2025-03-29 13:49:59.366 | INFO     | __main__:stt_disconnect:189 - Client disconnected from STT WebSocket: zHF5AH4osQdwle3mAAAB
+2025-03-29 13:49:59.371 | INFO     | __main__:before_request:48 - Request 810c051e-eaac-4ac2-b457-72f12007a643: GET /
+2025-03-29 13:49:59.410 | INFO     | __main__:stt_connect:184 - Client connected to STT WebSocket: hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:49:59.412 | INFO     | __main__:before_request:48 - Request 747d7ca1-b69d-4bc1-913b-18b871a0a5fd: GET /favicon.ico
+2025-03-29 13:50:01.188 | INFO     | __main__:stt_start:206 - Starting STT session for hwb-YcbLOXwRU1UqAAAD with data: {'sample_rate': 16000, 'channels': 1}
+2025-03-29 13:50:01.188 | INFO     | __main__:stt_start:219 - Creating Deepgram connection with options: {'punctuate': True, 'model': 'nova-2', 'language': 'es-419', 'encoding': 'linear16', 'sample_rate': 16000, 'channels': 1, 'interim_results': True}
+2025-03-29 13:50:01.189 | INFO     | __main__:stt_start:262 - Emitting ready event to hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:01.531 | WARNING  | __main__:stt_audio:289 - No active Deepgram connection for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:01.830 | WARNING  | __main__:stt_audio:289 - No active Deepgram connection for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:02.131 | WARNING  | __main__:stt_audio:289 - No active Deepgram connection for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:02.432 | WARNING  | __main__:stt_audio:289 - No active Deepgram connection for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:02.734 | WARNING  | __main__:stt_audio:289 - No active Deepgram connection for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:03.031 | WARNING  | __main__:stt_audio:289 - No active Deepgram connection for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:03.330 | WARNING  | __main__:stt_audio:289 - No active Deepgram connection for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:03.634 | WARNING  | __main__:stt_audio:289 - No active Deepgram connection for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:03.932 | WARNING  | __main__:stt_audio:289 - No active Deepgram connection for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:04.234 | WARNING  | __main__:stt_audio:289 - No active Deepgram connection for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:04.535 | WARNING  | __main__:stt_audio:289 - No active Deepgram connection for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:04.834 | WARNING  | __main__:stt_audio:289 - No active Deepgram connection for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:05.135 | WARNING  | __main__:stt_audio:289 - No active Deepgram connection for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:05.436 | WARNING  | __main__:stt_audio:289 - No active Deepgram connection for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:05.733 | WARNING  | __main__:stt_audio:289 - No active Deepgram connection for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:06.036 | WARNING  | __main__:stt_audio:289 - No active Deepgram connection for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:06.336 | WARNING  | __main__:stt_audio:289 - No active Deepgram connection for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:06.635 | WARNING  | __main__:stt_audio:289 - No active Deepgram connection for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:06.658 | INFO     | __main__:stt_stop:299 - Stopping STT session for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:50:06.658 | WARNING  | __main__:stt_stop:317 - No active Deepgram connection for hwb-YcbLOXwRU1UqAAAD
+2025-03-29 13:51:29.483 | INFO     | __main__:stt_connect:184 - Client connected to STT WebSocket: S1DUZ8xp2f2xIQsIAAAB
+2025-03-29 13:51:32.679 | INFO     | __main__:stt_disconnect:189 - Client disconnected from STT WebSocket: S1DUZ8xp2f2xIQsIAAAB
+2025-03-29 13:51:32.683 | INFO     | __main__:before_request:48 - Request 93ef873a-6d11-4104-898b-69da2eef0d63: GET /
+2025-03-29 13:51:32.723 | INFO     | __main__:stt_connect:184 - Client connected to STT WebSocket: Y5MoDm3pZqrMs_dJAAAD
+2025-03-29 13:51:32.725 | INFO     | __main__:before_request:48 - Request 89ae74e6-b137-4d83-b2d7-8b41c3a48e17: GET /favicon.ico
+2025-03-29 13:51:33.916 | INFO     | __main__:stt_start:206 - Starting STT session for Y5MoDm3pZqrMs_dJAAAD with data: {'sample_rate': 16000, 'channels': 1}
+2025-03-29 13:51:33.917 | INFO     | __main__:stt_start:219 - Creating Deepgram connection with options: {'punctuate': True, 'model': 'nova-2', 'language': 'es-419', 'encoding': 'linear16', 'sample_rate': 16000, 'channels': 1, 'interim_results': True}
+2025-03-29 13:53:50.003 | INFO     | __main__:stt_connect:186 - Client connected to STT WebSocket: JfnztaHwzCUEbvDDAAAB
+2025-03-29 13:54:09.648 | INFO     | __main__:stt_disconnect:191 - Client disconnected from STT WebSocket: JfnztaHwzCUEbvDDAAAB
+2025-03-29 13:54:09.653 | INFO     | __main__:before_request:48 - Request 00142a84-c287-451a-8e04-ae958f077e30: GET /
+2025-03-29 13:54:09.692 | INFO     | __main__:stt_connect:186 - Client connected to STT WebSocket: oZsXhkXCNImRFz3ZAAAD
+2025-03-29 13:54:09.694 | INFO     | __main__:before_request:48 - Request 62caf6f2-f478-48b6-a137-9712acbf8d4c: GET /favicon.ico
+2025-03-29 13:54:11.066 | INFO     | __main__:stt_start:205 - Starting STT session for oZsXhkXCNImRFz3ZAAAD with data: {'sample_rate': 16000, 'channels': 1}
+2025-03-29 13:54:11.066 | INFO     | __main__:stt_start:218 - Creating Deepgram connection with options: {'punctuate': True, 'model': 'nova-2', 'language': 'es-419', 'encoding': 'linear16', 'sample_rate': 16000, 'channels': 1, 'interim_results': True}
+2025-03-29 13:56:26.176 | INFO     | __main__:stt_connect:188 - Client connected to STT WebSocket: Gg8KlGmPGfxQpalbAAAB
+2025-03-29 13:56:28.748 | INFO     | __main__:stt_start:210 - Starting STT session for Gg8KlGmPGfxQpalbAAAB with data: {'sample_rate': 16000, 'channels': 1}
+2025-03-29 13:56:28.748 | INFO     | __main__:stt_start:223 - Creating Deepgram connection with options: {'punctuate': True, 'model': 'nova-2', 'language': 'es-419', 'encoding': 'linear16', 'sample_rate': 16000, 'channels': 1, 'interim_results': True}
+2025-03-29 13:56:35.792 | INFO     | __main__:stt_disconnect:193 - Client disconnected from STT WebSocket: Gg8KlGmPGfxQpalbAAAB
+2025-03-29 13:56:35.805 | INFO     | __main__:before_request:48 - Request 346e8325-cb09-4ee7-8c4e-49ec9bff6436: GET /
+2025-03-29 13:56:35.848 | INFO     | __main__:stt_connect:188 - Client connected to STT WebSocket: zXUR68ac0cf878LJAAAD
+2025-03-29 13:56:35.852 | INFO     | __main__:before_request:48 - Request 2e338582-00fd-49ce-b58b-5b7c9b64fcf2: GET /favicon.ico
+2025-03-29 13:56:37.744 | INFO     | __main__:stt_start:210 - Starting STT session for zXUR68ac0cf878LJAAAD with data: {'sample_rate': 16000, 'channels': 1}
+2025-03-29 13:56:37.744 | INFO     | __main__:stt_start:223 - Creating Deepgram connection with options: {'punctuate': True, 'model': 'nova-2', 'language': 'es-419', 'encoding': 'linear16', 'sample_rate': 16000, 'channels': 1, 'interim_results': True}
+2025-03-29 13:57:23.388 | INFO     | __main__:stt_connect:188 - Client connected to STT WebSocket: DIxUv1ftXmwSC9mYAAAB
+2025-03-29 13:59:46.038 | INFO     | __main__:stt_disconnect:193 - Client disconnected from STT WebSocket: DIxUv1ftXmwSC9mYAAAB
+2025-03-29 13:59:46.044 | INFO     | __main__:before_request:48 - Request 49dd7bea-9cb8-41b2-8178-c43b0160bddd: GET /
+2025-03-29 13:59:46.083 | INFO     | __main__:stt_connect:188 - Client connected to STT WebSocket: kaLvbYdxWt6JxBpJAAAD
+2025-03-29 13:59:46.086 | INFO     | __main__:before_request:48 - Request 418550c1-6180-4d3e-86e8-ae7d56d28d40: GET /favicon.ico
+2025-03-29 13:59:47.521 | INFO     | __main__:stt_start:210 - Starting STT session for kaLvbYdxWt6JxBpJAAAD with data: {'sample_rate': 16000, 'channels': 1}
+2025-03-29 13:59:47.521 | INFO     | __main__:stt_start:223 - Creating Deepgram connection with options: {'punctuate': True, 'model': 'nova-2', 'language': 'es-419', 'encoding': 'linear16', 'sample_rate': 16000, 'channels': 1, 'interim_results': True}
+2025-03-29 13:59:47.521 | INFO     | __main__:stt_start:288 - Starting asyncio thread for kaLvbYdxWt6JxBpJAAAD
+2025-03-29 14:00:43.613 | INFO     | __main__:stt_connect:188 - Client connected to STT WebSocket: -gB4LlhLv1kJgRUTAAAB
+2025-03-29 14:00:55.603 | INFO     | __main__:stt_connect:188 - Client connected to STT WebSocket: Q-l9CTybD2hjJHpOAAAB
+2025-03-29 14:02:34.838 | INFO     | __main__:stt_disconnect:195 - Client disconnected from STT WebSocket: Q-l9CTybD2hjJHpOAAAB
+2025-03-29 14:02:34.844 | INFO     | __main__:before_request:48 - Request fbe68b80-c805-4d2a-85d8-d644b3fe990c: GET /
+2025-03-29 14:02:34.882 | INFO     | __main__:stt_connect:188 - Client connected to STT WebSocket: BeAu2gbVupqn_mv3AAAD
+2025-03-29 14:02:34.885 | INFO     | __main__:before_request:48 - Request 935043e9-61e2-4bb9-a7fe-25a210ace3d6: GET /favicon.ico
+2025-03-29 14:02:36.221 | INFO     | __main__:stt_start:215 - Starting STT session for BeAu2gbVupqn_mv3AAAD with data: {'sample_rate': 16000, 'channels': 1}
+2025-03-29 14:02:36.221 | INFO     | __main__:stt_start:228 - Creating Deepgram connection with options: {'punctuate': True, 'model': 'nova-2', 'language': 'es-419', 'encoding': 'linear16', 'sample_rate': 16000, 'channels': 1, 'interim_results': True}
+2025-03-29 14:02:36.221 | INFO     | __main__:stt_start:293 - Starting asyncio thread for BeAu2gbVupqn_mv3AAAD
+2025-03-29 14:02:36.222 | INFO     | __main__:run_asyncio_loop:237 - Creating Deepgram connection for BeAu2gbVupqn_mv3AAAD in thread
+2025-03-29 14:02:36.222 | ERROR    | __main__:run_asyncio_loop:285 - Error in asyncio loop for BeAu2gbVupqn_mv3AAAD
+Traceback (most recent call last):
+
+  File "/Users/priyadwivedi/miniconda3/envs/speech-api/lib/python3.9/threading.py", line 937, in _bootstrap
+    self._bootstrap_inner()
+    │    └ <function Thread._bootstrap_inner at 0x100e5dee0>
+    └ <Thread(Thread-23, started daemon 6300577792)>
+  File "/Users/priyadwivedi/miniconda3/envs/speech-api/lib/python3.9/threading.py", line 980, in _bootstrap_inner
+    self.run()
+    │    └ <function Thread.run at 0x100e5dc10>
+    └ <Thread(Thread-23, started daemon 6300577792)>
+  File "/Users/priyadwivedi/miniconda3/envs/speech-api/lib/python3.9/threading.py", line 917, in run
+    self._target(*self._args, **self._kwargs)
+    │    │        │    │        │    └ {}
+    │    │        │    │        └ <Thread(Thread-23, started daemon 6300577792)>
+    │    │        │    └ ()
+    │    │        └ <Thread(Thread-23, started daemon 6300577792)>
+    │    └ <function stt_start.<locals>.run_asyncio_loop at 0x103e04d30>
+    └ <Thread(Thread-23, started daemon 6300577792)>
+
+> File "/Users/priyadwivedi/Documents/priya-exptts/Spanish-Teacher/app.py", line 240, in run_asyncio_loop
+    dg_client.transcription.live.v("1").connect(options),
+    │         │                                 └ {'punctuate': True, 'model': 'nova-2', 'language': 'es-419', 'encoding': 'linear16', 'sample_rate': 16000, 'channels': 1, 'in...
+    │         └ <property object at 0x1029ecf40>
+    └ <deepgram.Deepgram object at 0x103b17430>
+
+AttributeError: 'function' object has no attribute 'v'
+2025-03-29 14:12:28.342 | INFO     | __main__:stt_connect:190 - Client connected to STT WebSocket: f_CLLalFdImaojAxAAAB
+2025-03-29 14:12:31.916 | INFO     | __main__:stt_disconnect:197 - Client disconnected from STT WebSocket: f_CLLalFdImaojAxAAAB
+2025-03-29 14:12:31.919 | INFO     | __main__:before_request:55 - Request da9848bf-976e-4d11-8953-a89bbbc1a590: GET /
+2025-03-29 14:12:31.953 | INFO     | __main__:stt_connect:190 - Client connected to STT WebSocket: R-w0fOFmLBkX8nsMAAAD
+2025-03-29 14:12:31.956 | INFO     | __main__:before_request:55 - Request 0ab2394c-b716-4634-98f8-2ff7675e58d5: GET /favicon.ico
+2025-03-29 14:12:33.335 | INFO     | __main__:stt_start:226 - Starting STT session for R-w0fOFmLBkX8nsMAAAD with data: {'sample_rate': 16000, 'channels': 1}
+2025-03-29 14:12:33.336 | INFO     | __main__:stt_start:239 - Creating Deepgram connection with options: {
+    "channels": 1,
+    "encoding": "linear16",
+    "interim_results": true,
+    "language": "es-419",
+    "model": "nova-2",
+    "punctuate": true,
+    "sample_rate": 16000
+}
+2025-03-29 14:12:33.735 | INFO     | __main__:stt_start:282 - Deepgram connection started for R-w0fOFmLBkX8nsMAAAD
+2025-03-29 14:12:42.077 | INFO     | __main__:stt_stop:321 - Stopping STT session for R-w0fOFmLBkX8nsMAAAD
+2025-03-29 14:12:42.678 | INFO     | __main__:stt_stop:339 - Closed Deepgram connection for R-w0fOFmLBkX8nsMAAAD
+2025-03-29 14:17:29.992 | INFO     | __main__:stt_connect:190 - Client connected to STT WebSocket: O2cnGTC5POTT9VgEAAAB
+2025-03-29 14:17:33.481 | INFO     | __main__:stt_start:226 - Starting STT session for O2cnGTC5POTT9VgEAAAB with data: {'sample_rate': 16000, 'channels': 1}
+2025-03-29 14:17:33.482 | INFO     | __main__:stt_start:239 - Creating Deepgram connection with options: {
+    "channels": 1,
+    "encoding": "linear16",
+    "interim_results": true,
+    "language": "es-419",
+    "model": "nova-2",
+    "punctuate": true,
+    "sample_rate": 16000
+}
+2025-03-29 14:17:33.921 | INFO     | __main__:stt_start:298 - Deepgram connection started for O2cnGTC5POTT9VgEAAAB
+2025-03-29 14:17:40.561 | INFO     | __main__:stt_stop:337 - Stopping STT session for O2cnGTC5POTT9VgEAAAB
+2025-03-29 14:17:40.648 | INFO     | __main__:on_message:251 - Received result from Deepgram: {
+    "channel": {
+        "alternatives": [
+            {
+                "transcript": "",
+                "confidence": 0.0,
+                "words": []
+            }
+        ]
+    },
+    "metadata": {
+        "model_info": {
+            "name": "2-general-nova",
+            "version": "2023-12-04.34818",
+            "arch": "nova-2"
+        },
+        "request_id": "8b1ba3fa-a33f-4d02-94ed-84e29ad027f6",
+        "model_uuid": "26cf4c00-4a6b-437e-9bbc-9f71deb2ea43"
+    },
+    "type": "Results",
+    "channel_index": [
+        0,
+        1
+    ],
+    "duration": 0.4199375,
+    "start": 0.0,
+    "is_final": true,
+    "from_finalize": false,
+    "speech_final": true
+}
+2025-03-29 14:17:40.649 | INFO     | __main__:on_message:258 - Result is_final: True
+2025-03-29 14:17:40.649 | INFO     | __main__:on_message:265 - Extracted transcript: '' with confidence: 0.0
+2025-03-29 14:17:40.649 | INFO     | __main__:on_message:274 - Empty transcript received, not emitting
+2025-03-29 14:17:41.151 | INFO     | __main__:stt_stop:355 - Closed Deepgram connection for O2cnGTC5POTT9VgEAAAB
+2025-03-29 14:18:25.305 | INFO     | __main__:stt_disconnect:197 - Client disconnected from STT WebSocket: O2cnGTC5POTT9VgEAAAB
+2025-03-29 14:18:25.318 | INFO     | __main__:before_request:55 - Request 9cf10b81-44df-40e6-ac4d-d858a36f03c0: GET /
+2025-03-29 14:18:25.357 | INFO     | __main__:stt_connect:190 - Client connected to STT WebSocket: 3bdOgNYICjed8Vp5AAAD
+2025-03-29 14:18:25.361 | INFO     | __main__:before_request:55 - Request 24235c50-fd35-4066-9d99-54c81956e026: GET /favicon.ico
+2025-03-29 14:22:03.900 | INFO     | __main__:stt_connect:190 - Client connected to STT WebSocket: -0wZcCFKo0eFBy6xAAAB
+2025-03-29 14:22:21.157 | INFO     | __main__:stt_connect:190 - Client connected to STT WebSocket: mXyajiVkLDWQFd1KAAAB
+2025-03-29 14:22:31.911 | INFO     | __main__:stt_connect:190 - Client connected to STT WebSocket: Dc5ziZCxKNKosD74AAAB
+2025-03-29 14:22:41.565 | INFO     | __main__:stt_connect:190 - Client connected to STT WebSocket: Giz6DUXK1HwCE7CJAAAB
+2025-03-29 18:22:50.928 | INFO     | __main__:stt_disconnect:197 - Client disconnected from STT WebSocket: Giz6DUXK1HwCE7CJAAAB
