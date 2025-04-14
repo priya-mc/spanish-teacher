@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # API Keys
-DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY", "9a30a3ba85e47d6cfd4ad330f784b1769a6da0d4")
+DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # LLM Configuration
