@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Spanish Teacher</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .setup-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+        }
+        .scenario-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .topic-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .topic-button {
+            padding: 8px 12px;
+            background-color: #e0e0e0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .topic-button.selected {
+            background-color: #bbdefb;
+            border-color: #2196F3;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        select {
+            padding: 8px;
+            font-size: 16px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        #startButton {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+        #stopButton {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            display: none;
+        }
+        #startSessionButton {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+        }
+        #status {
+            font-style: italic;
+            color: #666;
+        }
+        .conversation-container {
+            display: flex;
+            gap: 20px;
+            height: 500px;
+        }
+        .conversation-panel {
+            flex: 1;
+            border: 1px solid #ddd;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .ai-message {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196F3;
+        }
+        .user-message {
+            background-color: #f1f8e9;
+            border-left: 4px solid #4CAF50;
+            text-align: right;
+        }
+        .translation {
+            font-style: italic;
+            color: #666;
+            margin-top: 5px;
+        }
+        .hints-container {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #fff3e0;
+            border-radius: 8px;
+        }
+        .hint {
+            margin: 5px 0;
+        }
+        #transcript {
+            min-height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+        .hidden {
+            display: none;
+        }
+        .message-controls {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        .tts-button {
+            background-color: #9c27b0;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .tts-button:hover {
+            background-color: #7b1fa2;
+        }
+        .tts-button:disabled {
+            background-color: #e1bee7;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Spanish Teacher</h1>
+        
+        <div id="setup-panel" class="panel">
+            <h2>Start a Spanish Conversation</h2>
+            
+            <div class="form-group">
+                <label for="level-select">Spanish Level:</label>
+                <select id="level-select">
+                    <option value="beginner" selected>Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="scenario-select">Scenario:</label>
+                <select id="scenario-select">
+                    <option value="">Select a scenario</option>
+                    <option value="restaurant">Restaurant</option>
+                    <option value="travel">Travel</option>
+                    <option value="shopping">Shopping</option>
+                    <option value="daily_life">Daily Life</option>
+                </select>
+            </div>
+            
+            <div id="topic-container" class="form-group hidden">
+                <label>Topic:</label>
+                <div id="topic-options" class="topic-buttons"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="mode-select">Processing Mode:</label>
+                <select id="mode-select">
+                    <option value="gemini" selected>Gemini Only</option>
+                    <option value="deepgram">Deepgram + Gemini</option>
+                </select>
+            </div>
+            
+            <button id="start-session-button" class="primary-button" disabled>Start Conversation</button>
+        </div>
+        
+        <div id="conversation-container" class="panel hidden">
+            <div class="messages-container">
+                <div id="ai-messages" class="messages"></div>
+                <div id="user-messages" class="messages"></div>
+            </div>
+            
+            <div class="controls-container">
+                <div id="transcript" class="transcript"></div>
+                
+                <div class="recording-controls">
+                    <button id="start-recording" class="primary-button">Start Recording</button>
+                    <button id="stop-recording" class="primary-button hidden">Stop Recording</button>
+                    <div id="recording-status" class="status">Ready to record</div>
+                    
+                    <div class="hints-toggle" style="margin: 10px 0;">
+                        <input type="checkbox" id="need-hints" name="need-hints">
+                        <label for="need-hints">Need Hints?</label>
+                    </div>
+                    
+                    <button id="help-button" class="secondary-button">Get Help</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // DOM Elements
+            const setupPanel = document.getElementById('setup-panel');
+            const conversationContainer = document.getElementById('conversation-container');
+            const levelSelect = document.getElementById('level-select');
+            const scenarioSelect = document.getElementById('scenario-select');
+            const topicContainer = document.getElementById('topic-container');
+            const topicOptions = document.getElementById('topic-options');
+            const modeSelect = document.getElementById('mode-select');
+            const startSessionButton = document.getElementById('start-session-button');
+            const startButton = document.getElementById('start-recording');
+            const stopButton = document.getElementById('stop-recording');
+            const helpButton = document.getElementById('help-button');
+            const statusElement = document.getElementById('recording-status');
+            const transcriptElement = document.getElementById('transcript');
+            const aiMessagesDiv = document.getElementById('ai-messages');
+            const userMessagesDiv = document.getElementById('user-messages');
+            
+            // State variables
+            let mediaRecorder;
+            let audioChunks = [];
+            let socket;
+            let currentTranscript = '';
+            let selectedTopic = null;
+            let processingMode = 'gemini'; // Default to Gemini Only
+            let scenariosData = {};
+            
+            // Debug function to inspect response objects
+            function debugResponse(response, data) {
+                console.log("Response status:", response.status);
+                console.log("Response headers:", Object.fromEntries([...response.headers.entries()]));
+                console.log("Response data:", data);
+                
+                // Check for specific response properties
+                if (data) {
+                    console.log("Message property:", data.message);
+                    console.log("Response property:", data.response);
+                }
+            }
+            
+            // Fetch configuration from server
+            try {
+                const response = await fetch('/api/get-config');
+                const config = await response.json();
+                
+                // Store scenarios data for later use
+                scenariosData = config.scenarios;
+                
+                // Use the scenarios from the server config
+                initializeScenarioOptions(config.scenarios);
+                
+                console.log("Config loaded successfully:", config);
+            } catch (error) {
+                console.error("Error loading config:", error);
+                alert("Failed to load configuration. Please refresh the page.");
+            }
+            
+            // Initialize scenario select options
+            function initializeScenarioOptions(scenarios) {
+                // Clear existing options
+                scenarioSelect.innerHTML = '<option value="">Select a scenario</option>';
+                
+                // Add options from scenarios
+                Object.keys(scenarios).forEach(scenarioKey => {
+                    const option = document.createElement('option');
+                    option.value = scenarioKey;
+                    option.textContent = scenarios[scenarioKey].name;
+                    scenarioSelect.appendChild(option);
+                });
+            }
+            
+            // Event Listeners
+            scenarioSelect.addEventListener('change', () => {
+                const scenario = scenarioSelect.value;
+                
+                if (scenario && scenariosData[scenario]) {
+                    updateTopics(scenario, scenariosData[scenario].topics || []);
+                } else {
+                    updateTopics('', []);
+                }
+            });
+            
+            modeSelect.addEventListener('change', () => {
+                processingMode = modeSelect.value;
+            });
+            
+            startSessionButton.addEventListener('click', startSession);
+            startButton.addEventListener('click', startRecording);
+            stopButton.addEventListener('click', () => stopRecording(true));
+            helpButton.addEventListener('click', getHelp);
+            
+            // Functions
+            function updateTopics(scenario, topics) {
+                console.log("Updating topics for scenario:", scenario, "Topics:", topics);
+                
+                // Clear previous topics
+                topicOptions.innerHTML = '';
+                selectedTopic = null;
+                startSessionButton.disabled = true;
+                
+                if (scenario && topics && topics.length > 0) {
+                    // Show topic container
+                    topicContainer.classList.remove('hidden');
+                    
+                    // Add topic buttons
+                    topics.forEach(topic => {
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.className = 'topic-button';
+                        button.textContent = topic.charAt(0).toUpperCase() + topic.slice(1);
+                        button.dataset.topic = topic;
+                        
+                        button.addEventListener('click', () => {
+                            // Remove active class from all buttons
+                            document.querySelectorAll('.topic-button').forEach(btn => {
+                                btn.classList.remove('active');
+                                btn.classList.remove('selected');
+                            });
+                            
+                            // Add active class to clicked button
+                            button.classList.add('active');
+                            button.classList.add('selected');
+                            
+                            // Update selected topic
+                            selectedTopic = topic;
+                            console.log("Selected topic:", selectedTopic);
+                            
+                            // Enable start button if a topic is selected
+                            startSessionButton.disabled = false;
+                        });
+                        
+                        topicOptions.appendChild(button);
+                    });
+                } else {
+                    // Hide topic container
+                    topicContainer.classList.add('hidden');
+                    startSessionButton.disabled = true;
+                }
+            }
+            
+            async function startSession() {
+                console.log("Start session button clicked");
+                console.log("Level:", levelSelect.value);
+                console.log("Scenario:", scenarioSelect.value);
+                console.log("Topic:", selectedTopic);
+                
+                if (!selectedTopic) {
+                    alert('Please select a topic');
+                    return;
+                }
+                
+                if (!scenarioSelect.value) {
+                    alert('Please select a scenario');
+                    return;
+                }
+                
+                try {
+                    const requestData = {
+                        level: levelSelect.value,
+                        scenario: scenarioSelect.value,
+                        topic: selectedTopic
+                    };
+                    
+                    console.log("Sending request data:", requestData);
+                    
+                    const response = await fetch('/api/start-session', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestData)
+                    });
+                    
+                    const data = await response.json();
+                    debugResponse(response, data);
+                    
+                    if (response.ok) {
+                        // Hide setup panel and show conversation container
+                        setupPanel.classList.add('hidden');
+                        conversationContainer.classList.remove('hidden');
+                        
+                        // Add AI message - check both possible response formats
+                        const messageText = data.message || data.response || "Let's start our conversation!";
+                        console.log("Displaying message:", messageText);
+                        addAIMessage(messageText);
+                    } else {
+                        alert(`Error: ${data.error || 'Failed to start session'}`);
+                    }
+                } catch (error) {
+                    console.error('Error starting session:', error);
+                    alert('Failed to start session. Please try again.');
+                }
+            }
+            
+            function addAIMessage(message, hints = []) {
+                console.log("Adding AI message:", message);
+                
+                // Create message element
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message ai-message';
+                
+                // Add message text
+                const messageTextDiv = document.createElement('div');
+                messageTextDiv.className = 'message-text';
+                messageTextDiv.innerHTML = `<p>${message}</p>`;
+                messageDiv.appendChild(messageTextDiv);
+                
+                // Add TTS button
+                const ttsButton = document.createElement('button');
+                ttsButton.className = 'tts-button';
+                ttsButton.innerHTML = '<i class="fas fa-volume-up"></i> Play';
+                ttsButton.onclick = function(event) {
+                    playTTS(message);
+                };
+                messageDiv.appendChild(ttsButton);
+                
+                // Add hints if available
+                if (hints && hints.length > 0) {
+                    const hintsDiv = document.createElement('div');
+                    hintsDiv.className = 'hints';
+                    hintsDiv.innerHTML = '<h4>Hints:</h4><ul>' + 
+                        hints.map(hint => `<li>${hint}</li>`).join('') + 
+                        '</ul>';
+                    messageDiv.appendChild(hintsDiv);
+                }
+                
+                // Add to messages container
+                aiMessagesDiv.appendChild(messageDiv);
+                
+                // Scroll to bottom
+                aiMessagesDiv.scrollTop = aiMessagesDiv.scrollHeight;
+            }
+            
+            function addUserMessage(message) {
+                console.log("Adding user message:", message);
+                
+                // Create message element
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message user-message';
+                messageDiv.innerHTML = `<p>${message}</p>`;
+                
+                // Add to messages container
+                userMessagesDiv.appendChild(messageDiv);
+                
+                // Scroll to bottom
+                userMessagesDiv.scrollTop = userMessagesDiv.scrollHeight;
+            }
+            
+            async function playTTS(text) {
+                try {
+                    console.log("Playing TTS for:", text);
+                    
+                    // Show loading indicator
+                    const loadingIndicator = document.createElement('span');
+                    loadingIndicator.textContent = ' (Loading audio...)';
+                    loadingIndicator.id = 'tts-loading';
+                    event.target.appendChild(loadingIndicator);
+                    
+                    // Request TTS audio from server
+                    const response = await fetch('/api/text-to-speech', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ text })
+                    });
+                    
+                    const data = await response.json();
+                    console.log("TTS response:", data);
+                    
+                    // Remove loading indicator
+                    const indicator = document.getElementById('tts-loading');
+                    if (indicator) indicator.remove();
+                    
+                    if (response.ok && data.audio) {
+                        // The response contains base64-encoded audio
+                        const audioData = data.audio;
+                        const audioFormat = data.format || 'mp3';
+                        
+                        // Convert base64 to blob
+                        const byteCharacters = atob(audioData);
+                        const byteNumbers = new Array(byteCharacters.length);
+                        
+                        for (let i = 0; i < byteCharacters.length; i++) {
+                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        }
+                        
+                        const byteArray = new Uint8Array(byteNumbers);
+                        const audioBlob = new Blob([byteArray], { type: `audio/${audioFormat}` });
+                        
+                        // Create audio element
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        const audio = new Audio(audioUrl);
+                        
+                        // Add event listeners for debugging
+                        audio.addEventListener('play', () => console.log('Audio started playing'));
+                        audio.addEventListener('ended', () => console.log('Audio finished playing'));
+                        audio.addEventListener('error', (e) => console.error('Audio error:', e));
+                        
+                        // Play the audio
+                        console.log("Playing audio from URL:", audioUrl);
+                        const playPromise = audio.play();
+                        
+                        if (playPromise !== undefined) {
+                            playPromise.catch(error => {
+                                console.error("Audio play error:", error);
+                                alert("Failed to play audio: " + error.message);
+                            });
+                        }
+                    } else {
+                        console.error("TTS error:", data.error || "Unknown error");
+                        alert("Failed to get audio. Please try again.");
+                    }
+                } catch (error) {
+                    console.error("Error playing TTS:", error);
+                    alert("Failed to play audio. Please try again.");
+                    
+                    // Remove loading indicator if it exists
+                    const indicator = document.getElementById('tts-loading');
+                    if (indicator) indicator.remove();
+                }
+            }
+            
+            async function getHelp() {
+                if (currentTranscript.trim()) {
+                    try {
+                        const needHints = document.getElementById('need-hints').checked;
+                        
+                        const response = await fetch('/api/process-message', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ 
+                                message: currentTranscript,
+                                needHelp: needHints
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        debugResponse(response, data);
+                        
+                        if (response.ok) {
+                            // Add user message
+                            addUserMessage(currentTranscript);
+                            
+                            // Add AI response with hints
+                            const responseText = data.response || data.message || "I'm processing your message.";
+                            addAIMessage(responseText, data.hints || []);
+                            
+                            // Clear transcript
+                            currentTranscript = '';
+                            transcriptElement.textContent = '';
+                        } else {
+                            alert(`Error: ${data.error}`);
+                        }
+                    } catch (error) {
+                        console.error('Error processing message:', error);
+                        alert('Failed to process message. Please try again.');
+                    }
+                } else {
+                    alert('Please record a message first');
+                }
+            }
+            
+            async function startRecording() {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    
+                    audioChunks = [];
+                    mediaRecorder.addEventListener('dataavailable', event => {
+                        audioChunks.push(event.data);
+                    });
+                    
+                    mediaRecorder.start();
+                    
+                    startButton.style.display = 'none';
+                    stopButton.style.display = 'inline-block';
+                    statusElement.textContent = 'Recording...';
+                } catch (error) {
+                    console.error('Error accessing microphone:', error);
+                    statusElement.textContent = 'Error accessing microphone';
+                }
+            }
+            
+            async function stopRecording(sendToAI = true) {
+                // Update UI
+                startButton.style.display = 'inline-block';
+                stopButton.style.display = 'none';
+                
+                // Stop MediaRecorder if it exists and is recording
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                    
+                    if (processingMode === 'gemini' && sendToAI) {
+                        mediaRecorder.addEventListener('stop', async () => {
+                            statusElement.textContent = 'Processing audio with Gemini...';
+                            
+                            try {
+                                // Create a Blob from the audio chunks
+                                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                                
+                                // Create FormData to send the file
+                                const formData = new FormData();
+                                formData.append('audio', audioBlob, 'recording.webm');
+                                formData.append('needHelp', document.getElementById('need-hints').checked);
+                                
+                                // Send to server
+                                const response = await fetch('/api/process-audio', {
+                                    method: 'POST',
+                                    body: formData
+                                });
+                                
+                                const data = await response.json();
+                                debugResponse(response, data);
+                                
+                                if (response.ok) {
+                                    // Add user message if transcript is available
+                                    if (data.transcript) {
+                                        addUserMessage(data.transcript);
+                                    }
+                                    
+                                    // Add AI response
+                                    if (data.response) {
+                                        addAIMessage(data.response, data.hints || []);
+                                    }
+                                    
+                                    statusElement.textContent = 'Ready to record';
+                                } else {
+                                    statusElement.textContent = `Error: ${data.error || 'Failed to process audio'}`;
+                                }
+                            } catch (error) {
+                                console.error('Error processing audio:', error);
+                                statusElement.textContent = 'Error processing audio';
+                            }
+                        });
+                    }
+                }
+                
+                // Stop all audio tracks
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+            }
+        });
+    </script>
+</body>
+</html>

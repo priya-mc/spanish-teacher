@@ -4,28 +4,36 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # API Keys
-DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
-ELEVEN_LABS_API_KEY = os.getenv("ELEVEN_LABS_API_KEY")
+DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY", "9a30a3ba85e47d6cfd4ad330f784b1769a6da0d4")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # LLM Configuration
 LLM_MODEL = "gemini/gemini-2.0-flash"  # Base model for conversations
 LLM_MODEL_FAST = "gemini/gemini-2.0-flash-lite"  # Faster model for quick responses
+LLM_MODEL_AUDIO = "gemini-2.0-flash"
+
+# MediaRecorder Configuration
+MEDIA_RECORDER_TIMESLICE = 250  # milliseconds
+
+# Deepgram Features
+LANGUAGE = "es-419"  # Spanish (Latin America)
+MODEL = "nova-2"
+SMART_FORMAT = True
+PUNCTUATE = True
+DIARIZE = False
 
 # Spanish Learning Levels
 SPANISH_LEVELS = {
     "beginner": {
-        "system_prompt": """You are a patient Spanish teacher for beginners. Follow these rules:
-        1. Use basic vocabulary and simple present tense
-        2. Speak slowly and clearly
-        3. Always provide English translations
-        4. Correct any mistakes gently
-        5. Give pronunciation tips
-        6. Keep sentences short and simple""",
+        "system_prompt": """You are a patient Spanish teacher named Elena for beginners. Follow these rules:
+        1. Use basic vocabulary 
+        2. DO NOT provide english translations of everything. Rarel you can do this for very complex words.
+        3. Correct any mistakes gently
+        4. Respond as a continuous sentence without line breaks. Always continue the conversation forward in Spanish, expressing your thoughts and asking questions.""",
         "max_complexity": 1
     },
     "intermediate": {
-        "system_prompt": """You are a Spanish teacher for intermediate students. Follow these rules:
+        "system_prompt": """You are a Spanish teacher named Elena for intermediate students. Follow these rules:
         1. Use moderate vocabulary and varied tenses
         2. Provide English translations only when needed
         3. Correct mistakes and explain grammar points
@@ -35,7 +43,7 @@ SPANISH_LEVELS = {
         "max_complexity": 2
     },
     "advanced": {
-        "system_prompt": """You are a Spanish conversation partner for advanced students. Follow these rules:
+        "system_prompt": """You are a Spanish conversation partner named Elena for advanced students. Follow these rules:
         1. Use natural, native-level Spanish
         2. Only translate complex or regional terms
         3. Focus on fluency and expression
@@ -67,25 +75,23 @@ SPANISH_SCENARIOS = {
 
 # Helper Prompts
 CORRECTION_PROMPT = """Analyze the student's response:
-1. Identify any grammar or vocabulary mistakes. Avoid mistakes in written text since this is a voice conversation.
+1. Identify any grammar mistakes. Avoid mistakes in written text or spellings since this is a voice conversation.
 2. Provide corrections with explanations
 3. Suggest alternative expressions
-4. Give positive reinforcement
-5. Maintain conversation flow"""
+4. Maintain conversation flow"""
 
-HINT_GENERATION_PROMPT = """Generate three helpful hints:
-1. A simpler way to express the idea
+HINT_GENERATION_PROMPT = """Generate 1-2 helpful hints:
+1. A simpler way to express the idea while speaking
 2. A more complex alternative
 3. A useful vocabulary suggestion
 Make sure hints match the student's level: {level}"""
 
-# Speech Configuration
-STT_MODEL = "nova-2"
-STT_LANGUAGE = "es-419"
-DEFAULT_VOICE_ID = "EXAVITQu4vr4xnSDxMaL"
-TTS_MODEL = "eleven_monolingual_v1"
 
-# API Configuration
-UPLOAD_FOLDER = 'temp_uploads'
-ALLOWED_EXTENSIONS = {'wav', 'mp3', 'ogg', 'flac'}
-MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB 
+AUDIO_GENERATION_PROMPT = """Generate a response to the user message. Look at the conversation history to understand the context and the user's level.
+In your output, give me the response as a continuous sentence without line breaks. Use the same language as the user message. Also give me a transcription of the user message.
+JSON format:
+{
+    "response": "response to the user message",
+    "transcription": "transcription of the user message"
+}
+"""

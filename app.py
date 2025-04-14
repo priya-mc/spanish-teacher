@@ -1,398 +1,209 @@
-from flask import Flask, request, jsonify, Response, stream_with_context, send_from_directory
-from flask_cors import CORS
-from flask_socketio import SocketIO, emit
-from deepgram import DeepgramClient, LiveTranscriptionEvents, LiveOptions
-from elevenlabs.client import ElevenLabs
-from loguru import logger
-import os
-import json
-import asyncio
-import threading
 import time
-from functools import wraps
-import uuid
-from werkzeug.utils import secure_filename
-from typing import Optional, Dict, Any
-from prometheus_client import Counter, Histogram, generate_latest
-from config import *
+from flask import Flask, render_template, jsonify, request, session
 from dotenv import load_dotenv
-
-# Initialize Flask app
-app = Flask(__name__)
-CORS(app)  # Enable CORS
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')  # Use threading mode
-
-# Configure logging
-logger.add("app.log", rotation="500 MB", retention="10 days", level="INFO")
+import os
+import config
+import uuid
+from conversation_manager import SpanishTeacher
+import asyncio
+import tempfile
+from openai import OpenAI
+import io
+import base64
+import shutil
+import subprocess
 
 # Load environment variables
 load_dotenv()
 
-# Initialize Deepgram and Eleven Labs
-dg_client = DeepgramClient(DEEPGRAM_API_KEY)
-eleven_labs_client = ElevenLabs(api_key=ELEVEN_LABS_API_KEY)
+app = Flask(__name__)
+app.secret_key = os.urandom(24)  # For session management
 
-# Configuration
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+# Initialize Spanish Teacher
+spanish_teacher = SpanishTeacher()
 
-# Store Deepgram connections for each client
-deepgram_connections = {}
-# Store locks for each client
-client_locks = {}
-# Store exit flags for each client
-client_exits = {}
-
-# Add metrics
-REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP requests', ['method', 'endpoint', 'status'])
-REQUEST_LATENCY = Histogram('http_request_duration_seconds', 'HTTP request latency', ['method', 'endpoint'])
-
-# Request tracking middleware
-@app.before_request
-def before_request():
-    request.id = str(uuid.uuid4())
-    request.start_time = time.time()
-    logger.info(f"Request {request.id}: {request.method} {request.path}")
-
-# Error handler
-@app.errorhandler(Exception)
-def handle_error(error):
-    logger.exception(f"Request {getattr(request, 'id', 'unknown')} failed")
-    return jsonify({
-        "error": str(error),
-        "request_id": getattr(request, 'id', 'unknown')
-    }), 500
-
-# Rate limiting decorator
-def rate_limit(calls: int, period: float):
-    def decorator(f):
-        last_reset = time.time()
-        calls_made = 0
-
-        @wraps(f)
-        def wrapper(*args, **kwargs):
-            nonlocal last_reset, calls_made
-            now = time.time()
-            
-            if now - last_reset > period:
-                calls_made = 0
-                last_reset = now
-            
-            if calls_made >= calls:
-                return jsonify({"error": "Rate limit exceeded"}), 429
-            
-            calls_made += 1
-            return f(*args, **kwargs)
-        return wrapper
-    return decorator
-
-# Utility functions
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-# Health check endpoint
-@app.route('/health')
-def health_check():
-    return jsonify({"status": "healthy", "timestamp": time.time()})
-
-# Speech-to-Text streaming endpoint (Deepgram)
-@app.route('/api/v1/stt/stream', methods=['POST'])
-@rate_limit(calls=100, period=3600)
-async def stream_stt():
-    try:
-        if 'audio' not in request.files:
-            raise ValueError("No audio file provided")
-
-        file = request.files['audio']
-        if not allowed_file(file.filename):
-            raise ValueError("Invalid file type")
-
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-
-        async def generate():
-            try:
-                source = {'buffer': open(filepath, 'rb'), 'mimetype': 'audio/wav'}
-                options = {
-                    'punctuate': True,
-                    'model': STT_MODEL,
-                    'language': STT_LANGUAGE,
-                    'encoding': 'linear16',
-                    'channels': 1,
-                    'sample_rate': 16000
-                }
-
-                response = await dg_client.transcription.live.v("1").listen(source, options)
-                
-                async for result in response:
-                    if result.is_final:
-                        yield f"data: {json.dumps(result.channel.alternatives[0].transcript)}\n\n"
-
-            except Exception as e:
-                logger.exception("Streaming STT error")
-                yield f"data: {json.dumps({'error': str(e)})}\n\n"
-            
-            finally:
-                os.remove(filepath)  # Clean up temporary file
-
-        return Response(stream_with_context(generate()), mimetype='text/event-stream')
-
-    except Exception as e:
-        logger.exception("STT endpoint error")
-        return jsonify({"error": str(e)}), 400
-
-# Text-to-Speech streaming endpoint (Eleven Labs)
-@app.route('/api/v1/tts/stream', methods=['POST'])
-@rate_limit(calls=100, period=3600)
-async def stream_tts():
-    try:
-        data = request.get_json()
-        if not data or 'text' not in data:
-            raise ValueError("No text provided")
-
-        text = data['text']
-        voice_id = data.get('voice', DEFAULT_VOICE_ID)
-        model = data.get('model', TTS_MODEL)
-
-        def generate_audio():
-            try:
-                # Use the new client API
-                audio = eleven_labs_client.text_to_speech.convert(
-                    text=text,
-                    voice_id=voice_id,
-                    model_id=model,
-                    output_format="mp3_44100_128",
-                )
-                
-                # Return the audio as a single chunk since the new API doesn't stream by default
-                yield audio
-
-            except Exception as e:
-                logger.exception("Streaming TTS error")
-                yield b''
-
-        return Response(
-            generate_audio(),
-            mimetype='audio/mpeg',
-            headers={
-                'X-Content-Type-Options': 'nosniff',
-                'Content-Disposition': 'attachment; filename=speech.mp3'
-            }
-        )
-
-    except Exception as e:
-        logger.exception("TTS endpoint error")
-        return jsonify({"error": str(e)}), 400
-
-@socketio.on('connect', namespace='/api/v1/stt/websocket')
-def stt_connect():
-    logger.info(f"Client connected to STT WebSocket: {request.sid}")
-    emit('connect_response', {"status": "Connected"})
-
-@socketio.on('disconnect', namespace='/api/v1/stt/websocket')
-def stt_disconnect():
-    # Capture the session ID
-    session_id = request.sid
-    logger.info(f"Client disconnected from STT WebSocket: {session_id}")
-    
-    # Clean up any resources
-    if session_id in deepgram_connections:
-        try:
-            # Signal the thread to exit
-            if session_id in client_locks and session_id in client_exits:
-                with client_locks[session_id]:
-                    client_exits[session_id] = True
-            
-            # Close the Deepgram connection
-            deepgram_connections[session_id].finish()
-            del deepgram_connections[session_id]
-            
-            # Clean up locks and exit flags
-            if session_id in client_locks:
-                del client_locks[session_id]
-            if session_id in client_exits:
-                del client_exits[session_id]
-                
-            logger.info(f"Cleaned up Deepgram connection for {session_id}")
-        except Exception as e:
-            logger.exception(f"Error cleaning up for {session_id}")
-
-@socketio.on('start', namespace='/api/v1/stt/websocket')
-def stt_start(data):
-    try:
-        # Capture the session ID before starting the thread
-        session_id = request.sid
-        logger.info(f"Starting STT session for {session_id} with data: {data}")
-        
-        # Setup Deepgram connection options
-        options = LiveOptions(
-            model=STT_MODEL,
-            language=STT_LANGUAGE,
-            punctuate=True,
-            encoding="linear16",
-            channels=data.get('channels', 1),
-            sample_rate=data.get('sample_rate', 16000),
-            interim_results=True
-        )
-        
-        logger.info(f"Creating Deepgram connection with options: {options}")
-        
-        # Create a new Deepgram connection
-        dg_connection = dg_client.listen.websocket.v("1")
-        
-        # Initialize lock and exit flag for this client
-        client_locks[session_id] = threading.Lock()
-        client_exits[session_id] = False
-        
-        # Define the transcript callback
-        def on_message(self, result, **kwargs):
-            try:
-                logger.info(f"Received result from Deepgram: {result}")
-                
-                if hasattr(result, 'is_final'):
-                    is_final = result.is_final
-                else:
-                    is_final = True  # Assume final if not specified
-                    
-                logger.info(f"Result is_final: {is_final}")
-                
-                if is_final:
-                    if hasattr(result, 'channel') and hasattr(result.channel, 'alternatives') and len(result.channel.alternatives) > 0:
-                        transcript = result.channel.alternatives[0].transcript
-                        confidence = getattr(result.channel.alternatives[0], 'confidence', 0.0)
-                        
-                        logger.info(f"Extracted transcript: '{transcript}' with confidence: {confidence}")
-                        
-                        if len(transcript.strip()) > 0:
-                            logger.info(f"Emitting transcript for {session_id}: {transcript}")
-                            socketio.emit('transcript', {
-                                "transcript": transcript,
-                                "confidence": confidence
-                            }, namespace='/api/v1/stt/websocket', room=session_id)
-                        else:
-                            logger.info(f"Empty transcript received, not emitting")
-                    else:
-                        logger.warning(f"Result does not have expected structure: {result}")
-                else:
-                    logger.debug(f"Received non-final result, ignoring")
-            except Exception as e:
-                logger.exception(f"Error in transcript callback for {session_id}")
-                socketio.emit('error', {"error": str(e)}, namespace='/api/v1/stt/websocket', room=session_id)
-        
-        # Register the callback
-        dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
-        
-        # Start the connection
-        if dg_connection.start(options) is False:
-            logger.error(f"Failed to start Deepgram connection for {session_id}")
-            emit('error', {"error": "Failed to start Deepgram connection"}, namespace='/api/v1/stt/websocket')
-            return
-        
-        # Store the connection
-        deepgram_connections[session_id] = dg_connection
-        
-        # Emit ready event
-        emit('ready', {"status": "Listening"}, namespace='/api/v1/stt/websocket')
-        
-        logger.info(f"Deepgram connection started for {session_id}")
-    
-    except Exception as e:
-        logger.exception(f"Error starting STT session for {session_id}")
-        emit('error', {"error": str(e)}, namespace='/api/v1/stt/websocket')
-
-@socketio.on('audio', namespace='/api/v1/stt/websocket')
-def stt_audio(audio_data):
-    try:
-        # Capture the session ID
-        session_id = request.sid
-        
-        if session_id in deepgram_connections:
-            # Check if we should exit
-            if session_id in client_locks and session_id in client_exits:
-                with client_locks[session_id]:
-                    if client_exits[session_id]:
-                        logger.info(f"Skipping audio processing for {session_id} as exit is flagged")
-                        return
-            
-            # Log audio data size
-            data_size = len(audio_data) if audio_data else 0
-            logger.debug(f"Received audio data from {session_id}: {data_size} bytes")
-            
-            # Send audio data to Deepgram
-            deepgram_connections[session_id].send(audio_data)
-        else:
-            logger.warning(f"No active Deepgram connection for {session_id}")
-            emit('error', {"error": "No active Deepgram connection"}, namespace='/api/v1/stt/websocket')
-    
-    except Exception as e:
-        logger.exception(f"Error processing audio for {session_id}")
-        emit('error', {"error": str(e)}, namespace='/api/v1/stt/websocket')
-
-@socketio.on('stop', namespace='/api/v1/stt/websocket')
-def stt_stop():
-    try:
-        # Capture the session ID
-        session_id = request.sid
-        logger.info(f"Stopping STT session for {session_id}")
-        
-        if session_id in deepgram_connections:
-            # Signal the thread to exit
-            if session_id in client_locks and session_id in client_exits:
-                with client_locks[session_id]:
-                    client_exits[session_id] = True
-            
-            # Close the Deepgram connection
-            deepgram_connections[session_id].finish()
-            
-            # Clean up
-            del deepgram_connections[session_id]
-            if session_id in client_locks:
-                del client_locks[session_id]
-            if session_id in client_exits:
-                del client_exits[session_id]
-            
-            logger.info(f"Closed Deepgram connection for {session_id}")
-            emit('stopped', {"status": "Stopped"}, namespace='/api/v1/stt/websocket')
-        else:
-            logger.warning(f"No active Deepgram connection for {session_id}")
-            emit('error', {"error": "No active Deepgram connection"}, namespace='/api/v1/stt/websocket')
-    
-    except Exception as e:
-        logger.exception(f"Error stopping STT session for {session_id}")
-        emit('error', {"error": str(e)}, namespace='/api/v1/stt/websocket')
-
-# Add metrics endpoint
-@app.route('/metrics')
-def metrics():
-    return Response(generate_latest(), mimetype='text/plain')
-
-# Add after_request handler
-@app.after_request
-def after_request(response):
-    REQUEST_COUNT.labels(
-        method=request.method,
-        endpoint=request.path,
-        status=response.status_code
-    ).inc()
-    
-    if hasattr(request, 'start_time'):
-        REQUEST_LATENCY.labels(
-            method=request.method,
-            endpoint=request.path
-        ).observe(time.time() - request.start_time)
-    
-    return response
+# Initialize OpenAI client (synchronous)
+openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.route('/')
 def index():
-    return app.send_static_file('index.html')
+    # Generate a unique session ID if not present
+    if 'user_id' not in session:
+        session['user_id'] = str(uuid.uuid4())
+    return render_template('index.html')
 
-@app.route('/favicon.ico')
-def favicon():
-    return send_from_directory(os.path.join(app.root_path, 'static'),
-                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
+@app.route('/api/get-config')
+def get_config():
+    """Return the configuration to the frontend"""
+    return jsonify({
+        "apiKey": config.DEEPGRAM_API_KEY,
+        "language": config.LANGUAGE,
+        "model": config.MODEL,
+        "smartFormat": config.SMART_FORMAT,
+        "punctuate": config.PUNCTUATE,
+        "diarize": config.DIARIZE,
+        "mediaRecorderTimeslice": config.MEDIA_RECORDER_TIMESLICE,
+        "levels": list(config.SPANISH_LEVELS.keys()),
+        "scenarios": {
+            k: {
+                "name": v["name"],
+                "topics": v["topics"]  # Include the topics array for each scenario
+            } 
+            for k, v in config.SPANISH_SCENARIOS.items()
+        }
+    })
+
+@app.route('/api/start-session', methods=['POST'])
+def start_session():
+    """Start a new learning session"""
+    data = request.json
+    user_id = session.get('user_id')
+    level = data.get('level')
+    scenario = data.get('scenario')
+    topic = data.get('topic')  # Get the topic parameter
+
+    print(f"Starting session with user_id: {user_id}, level: {level}, scenario: {scenario}, topic: {topic}")
+    
+    if not user_id or not level or not scenario or not topic:  # Add topic to validation
+        return jsonify({"error": "Missing required parameters"}), 400
+    
+    try:
+        # Run the async function with the topic parameter
+        result = asyncio.run(spanish_teacher.start_session(user_id, level, scenario, topic))
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/process-message', methods=['POST'])
+def process_message():
+    """Process a student's message"""
+    data = request.json
+    user_id = session.get('user_id')
+    message = data.get('message')
+    need_help = data.get('needHelp', False)
+    
+    if not user_id or not message:
+        return jsonify({"error": "Missing required parameters"}), 400
+    
+    try:
+        # Run the async function
+        result = asyncio.run(spanish_teacher.process_message(user_id, message, need_help))
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/get-history')
+def get_history():
+    """Get conversation history"""
+    user_id = session.get('user_id')
+    
+    if not user_id:
+        return jsonify({"error": "No active session"}), 400
+    
+    history = spanish_teacher.get_conversation_history(user_id)
+    if not history:
+        return jsonify({"error": "No conversation history found"}), 404
+    
+    return jsonify({"history": history})
+
+@app.route('/api/process-audio', methods=['POST'])
+def process_audio():
+    """Process an audio file using Gemini"""
+    user_id = session.get('user_id')
+    
+    if not user_id:
+        return jsonify({"error": "No active session"}), 400
+    
+    if 'audio' not in request.files:
+        return jsonify({"error": "No audio file provided"}), 400
+    
+    audio_file = request.files['audio']
+    need_help = request.form.get('needHelp', 'false').lower() == 'true'
+    
+    try:
+        # Create temporary directory
+        temp_dir = tempfile.mkdtemp()
+        
+        # Save the original WebM file
+        webm_path = os.path.join(temp_dir, 'audio.webm')
+        audio_file.save(webm_path)
+        
+        # Convert WebM to WAV using FFmpeg
+        wav_path = os.path.join(temp_dir, 'audio.wav')
+        try:
+            # Run FFmpeg to convert WebM to WAV
+            subprocess.run(
+                ['ffmpeg', '-i', webm_path, '-ar', '16000', '-ac', '1', wav_path],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            
+            # Verify the WAV file was created
+            if os.path.exists(wav_path) and os.path.getsize(wav_path) > 0:
+                # Process the WAV file with Gemini
+                result = asyncio.run(spanish_teacher.process_audio_file(user_id, wav_path, need_help))
+                
+                # Clean up
+                shutil.rmtree(temp_dir)
+                
+                return jsonify(result)
+            else:
+                raise ValueError("WAV conversion failed: Output file is empty or not created")
+                
+        except subprocess.CalledProcessError as e:
+            error_message = f"FFmpeg conversion error: {e.stderr.decode() if e.stderr else str(e)}"
+            print(error_message)
+            return jsonify({"error": error_message}), 500
+            
+    except Exception as e:
+        print(f"Error processing audio: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        # Clean up if temp_dir was created
+        if 'temp_dir' in locals():
+            shutil.rmtree(temp_dir)
+            
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/text-to-speech', methods=['POST'])
+def text_to_speech():
+    """Convert text to speech using OpenAI TTS"""
+    data = request.json
+    text = data.get('text')
+    print(f"Text to speech: {text}")
+    
+    if not text:
+        return jsonify({"error": "No text provided"}), 400
+    
+    try:
+        # Generate speech using OpenAI
+        response = openai_client.audio.speech.create(
+            model="gpt-4o-mini-tts",
+            voice="echo",  # You can make this configurable
+            input=text,
+            instructions="You are a smart assistant that speaks spanish and english. Speak the spanish text as spanish should be spoken in a conversation and english as it should be spoken in a conversation with clear pronunciation.",
+            response_format="mp3",
+        )
+        
+        # Get the audio content directly
+        # The response object should have the audio data directly accessible
+        audio_data = response.content
+        
+        # Convert to base64 for sending to frontend
+        audio_base64 = base64.b64encode(audio_data).decode('utf-8')
+        
+        return jsonify({
+            "audio": audio_base64,
+            "format": "mp3"
+        })
+        
+    except Exception as e:
+        print(f"TTS error: {str(e)}")
+        import traceback
+        traceback.print_exc()  # Print the full traceback for debugging
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    # Use socketio.run instead of app.run, but with the correct parameters
-    socketio.run(app, host='0.0.0.0', port=5000, debug=os.getenv('FLASK_ENV') == 'development', allow_unsafe_werkzeug=True) 
+    app.run(debug=True)
